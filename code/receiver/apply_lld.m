@@ -1,10 +1,10 @@
 function binary_seq = apply_lld(recv_signal, modulation_mode, eb_n0, H_measured)
 %APPLY_LLD Calculates the log likelihood ratios.
-variance = 10.^(eb_n0/10);
-
-if strcmp(modulation_mode, 'QPSK')
-    variance = 0.5*variance;
-end
+% variance = 10.^(eb_n0/10);
+% 
+% if strcmp(modulation_mode, 'QPSK')
+%     variance = 0.5*variance;
+% end
 
 % Mapping for BPSK
 S_n1 = -1;
@@ -17,7 +17,7 @@ S_01 = (-1 + 1j)*sqrt(0.5);
 S_10 = (+1 - 1j)*sqrt(0.5);
 S_11 = (-1 - 1j)*sqrt(0.5);
 
-var_matrix = repmat(variance', [1 length(recv_signal)]);
+% var_matrix = repmat(variance', [1 length(recv_signal)]);
 recv_signal = recv_signal';
 if strcmp(modulation_mode, 'BPSK')
 %     L_p1 = exp(-(abs(recv_signal-H_measured*S_p1).^2)./var_matrix);
@@ -27,7 +27,7 @@ if strcmp(modulation_mode, 'BPSK')
     L_n1 = abs(recv_signal-H_measured*S_n1).^2;
     
     ratio = L_p1./L_n1;
-    binary_seq = (ratio>1);
+    binary_seq = (ratio<1);
     return;
 end
 

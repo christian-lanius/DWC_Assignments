@@ -1,7 +1,9 @@
-function [dist_signal, H_measured] = apply_channel(input_signal, modulation_mode, channel_model, eb_n0)
+function [dist_signal, H_measured] = apply_channel(input_signal, modulation_mode, channel_model, eb_n0, num_subcarriers, num_guard_samples)
 %APPLY_CHANNEL Distortes the channel according to the channel model
 
 variance = 10.^(-eb_n0/10);
+variance = variance/(num_subcarriers+num_guard_samples);
+
 
 % If QPSK, the energy per bit is halfed, so the variance is halfed as well
 if strcmp(modulation_mode, 'QPSK')
@@ -25,8 +27,14 @@ if strcmp(channel_model,'Rayleigh')
         sqrt(0.5)*randn(length(variance), length(input_signal))*1j;
 end
 
-H_measured = H;
-dist_signal = H.*input_signal + N;
+H_measured = H';
+dist_signal = H'.*input_signal + N';
+
+num_samples_delay = 2;
+imp_resp = zeros(num_samples_delay, 1);
+imp_resp(end) = 1;
+dist_signal = conv2(imp_resp, dist_signal);
+dist_signal = dist_signal(1:end-num_samples_delay+1,:);
 % end
 
 end
