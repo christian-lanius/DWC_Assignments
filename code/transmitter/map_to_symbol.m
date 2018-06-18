@@ -5,7 +5,7 @@ if strcmp(modulation_mode, 'BPSK')
     input_signal = 2*binary_signal-1;
     return
 end
-
+input_length = length(binary_signal);
 if strcmp(modulation_mode, 'QPSK')
     % Map two consecutive bits to I and Q phase
     % Scale with sqrt(.5) to obtain unit vector length

@@ -3,7 +3,7 @@ addpath('receiver', 'transmitter');
 %% Settings
 num_subcarriers = 256;
 num_guard_samples = 32;
-input_length_awgn = num_subcarriers*100;
+input_length_awgn = num_subcarriers*200;
 max_eb_n0_awgn = 20;
 %% Do calculations for BPSK and AWGN
 channel_model = 'AWGN';
@@ -17,8 +17,9 @@ eb_n0 = 0:1:max_eb_n0;
 binary_input = create_input_signal(input_length);
 baseband_signal = map_to_symbol(binary_input, modulation_mode);
 % baseband_signal = [1:input_length_awgn]';
-% [baseband_signal, pilot_sequence] = add_pilot_sequence(baseband_signal);
-parallel_signal = symbol_to_ofdm(baseband_signal, num_subcarriers);
+parallelized = reshape(baseband_signal, num_subcarriers, []);
+parallelized = add_pilot_sequence(parallelized);
+parallel_signal = symbol_to_ofdm(parallelized, num_subcarriers);
 % parallel_signal = baseband_signal;
 parallel_signal_with_prefix = add_cyclic_prefix(parallel_signal, num_guard_samples);
 % foo = [1:(num_subcarriers+num_guard_samples)]';
@@ -34,17 +35,24 @@ time_signal = parallel_to_serial(parallel_signal_with_prefix);
 parallel_recv_signal_with_prefix = serial_to_parallel(recv_signal, num_subcarriers, num_guard_samples);
 
 parallel_recv_signal = remove_cyclic_prefix(parallel_recv_signal_with_prefix, num_guard_samples);
-baseband_recv_signal = ofdm_to_baseband(parallel_recv_signal, num_subcarriers);
+baseband_recv_signal_parallel = ofdm_to_baseband(parallel_recv_signal, num_subcarriers);
+[baseband_recv_signal, H_est] = remove_pilot_sequence(baseband_recv_signal_parallel);
 % [baseband_recv_signal, channel_resp] = remove_pilot_sequence(baseband_recv_signal, pilot_sequence);
-
-binary_recv_signal = apply_lld(baseband_recv_signal, modulation_mode, eb_n0, 1);
+% H = estimate_channel(baseband_recv_signal, baseband_signal);
+binary_recv_signal = apply_lld(baseband_recv_signal, modulation_mode, eb_n0, H_est);
 measured_ber = calculate_measured_ber(binary_input', binary_recv_signal)
-scatter(real(baseband_recv_signal(:, 1)), imag(baseband_recv_signal(:, 1)), 8, 'filled'); 
+% scatter(real(baseband_recv_signal(:, 11)./H_est(:,11)), imag(baseband_recv_signal(:, 11)./H_est(:,11)), 8, 'filled'); 
+
+scatter(real(baseband_recv_signal(:, 2)./H_est(:,2)), imag(baseband_recv_signal(:, 2)./H_est(:,2)), 8, 'filled'); 
+hold on;
+scatter(real(baseband_signal), imag(baseband_signal), 8, 'filled', 'r'); 
 grid on
 grid minor
 xlim([-2 2])
 ylim([-2 2])
 pbaspect([1 1 1])
+
+foo = [H_est(:,1), H_est(:,1)];
 %%CHANNEL
 % channel_resp = fade(1, 10e5, 1, 2e-4*3.84e6, 1, 1/3.84e6);
 % time_signal_rec = zeros(1009999,num_subcarriers);
